@@ -1,4 +1,5 @@
-<h1 align=center><img src="https://github.com/blainekyle/minK/blob/main/minkico-blue-120.png" height=60px/>minK</h1>
+<h1 align=center><img src="https://github.com/blainekyle/minK/blob/main/minkico-blue-120.png" height=60px/>minK</h1> 
+
 **offline code editor with live web preview.** 
 
 <img src="https://github.com/blainekyle/minK/blob/main/mink-screen-01.png" />
