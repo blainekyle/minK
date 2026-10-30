@@ -1,0 +1,23 @@
+# .NET build outputs
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Local publish & installer build outputs
+publish/
+publish-*/
+dist/
+installer/staging/
+installer/output/
+
+# IDE & OS metadata
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Thumbs.db
+Desktop.ini
+.DS_Store

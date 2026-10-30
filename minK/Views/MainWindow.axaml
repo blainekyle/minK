@@ -1,0 +1,683 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:mink.Controls"
+        xmlns:models="using:mink.Models"
+        x:Class="mink.Views.MainWindow"
+        x:Name="RootWindow"
+        Title="{Binding WindowTitle}"
+        Icon="/Assets/mink.ico"
+        Width="1440"
+        Height="860"
+        MinWidth="880"
+        MinHeight="540"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E"
+        Foreground="#CCCCCC"
+        DragDrop.AllowDrop="True">
+
+    <Window.Styles>
+        <Style Selector="ListBox.tab-strip">
+            <Setter Property="Background" Value="#252526" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="ListBox.tab-strip ListBoxItem">
+            <Setter Property="Background" Value="#2D2D2D" />
+            <Setter Property="Foreground" Value="#969696" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,1,0" />
+            <Setter Property="MinHeight" Value="35" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="ListBox.tab-strip ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#323234" />
+            <Setter Property="Foreground" Value="#D4D4D4" />
+        </Style>
+        <Style Selector="ListBox.tab-strip ListBoxItem:selected">
+            <Setter Property="Background" Value="#1E1E1E" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+        <Style Selector="ListBox.tab-strip ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1E1E1E" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+        <Style Selector="ListBox.tab-strip ListBoxItem Border.tab-top-accent">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.tab-strip ListBoxItem:selected Border.tab-top-accent">
+            <Setter Property="Background" Value="#007ACC" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="36,*,24">
+        <!-- ==================== TOP COMMAND BAR ==================== -->
+        <Border Grid.Row="0" Background="#323233" BorderBrush="#252526" BorderThickness="0,0,0,1" Padding="10,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- Left Brand Mark & File Actions -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="2,0,4,0">
+                        <Image Source="/Assets/mink-glyph.png"
+                               Height="20"
+                               Stretch="Uniform"
+                               RenderOptions.BitmapInterpolationMode="HighQuality"
+                               VerticalAlignment="Center" />
+                        <TextBlock Text="minK"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="#F0F4F8"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Border Width="1" Height="16" Background="#48484A" Margin="4,0" />
+
+                    <Button Classes="toolbar-btn"
+                            Content="☰"
+                            FontSize="14"
+                            ToolTip.Tip="Toggle Folder Explorer (Ctrl+B)"
+                            Command="{Binding ToggleExplorerCommand}" />
+                    <Button Classes="toolbar-btn"
+                            Content="+ New"
+                            ToolTip.Tip="New Tab (Ctrl+N)"
+                            Command="{Binding NewFileCommand}" />
+                    <Button Classes="toolbar-btn"
+                            Content="📂 Open File"
+                            ToolTip.Tip="Open File (Ctrl+O)"
+                            Command="{Binding OpenFileCommand}" />
+                    <Button Classes="toolbar-btn"
+                            Content="📁 Open Folder"
+                            ToolTip.Tip="Open Project Folder"
+                            Command="{Binding OpenFolderCommand}" />
+                    <Button Classes="toolbar-btn"
+                            Content="💾 Save"
+                            ToolTip.Tip="Save Active File (Ctrl+S)"
+                            Command="{Binding SaveFileCommand}" />
+                    <Button Classes="toolbar-btn"
+                            Content="Save As"
+                            ToolTip.Tip="Save Active File As (Ctrl+Shift+S)"
+                            Command="{Binding SaveFileAsCommand}" />
+                    <Border Width="1" Height="16" Background="#48484A" Margin="4,0" />
+                    <Button Classes="toolbar-btn"
+                            Content="✨ Format"
+                            ToolTip.Tip="Format Document (Shift+Alt+F)"
+                            Command="{Binding FormatDocumentCommand}" />
+                    <Border Width="1" Height="16" Background="#48484A" Margin="4,0" />
+                    <Button Classes="toolbar-btn"
+                            Content="⚙ Preferences"
+                            ToolTip.Tip="minK Preferences (Ctrl+,)"
+                            Command="{Binding OpenPreferencesCommand}" />
+                </StackPanel>
+
+                <!-- Center Workspace Title -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding WindowTitle}"
+                           FontSize="12"
+                           Foreground="#9D9D9D"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False" />
+
+                <!-- Right View & Local AI Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Button Classes="toolbar-btn"
+                            Content="🌐 Preview"
+                            ToolTip.Tip="Show / Hide Chromium Previewer"
+                            Command="{Binding TogglePreviewPaneCommand}" />
+                    <Button Classes="toolbar-btn"
+                            Content="⧉ Detach Preview"
+                            ToolTip.Tip="Pop Chromium Previewer into a separate window"
+                            IsVisible="{Binding !IsPreviewDetached}"
+                            Command="{Binding DetachPreviewCommand}" />
+                    <Border Width="1" Height="16" Background="#48484A" Margin="3,0" />
+                    <Button Classes="toolbar-btn"
+                            ToolTip.Tip="Show / Hide Local Agent Sidebar"
+                            Command="{Binding ToggleChatPaneCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Text="Agent" VerticalAlignment="Center" />
+                            <Border Width="14"
+                                    Height="12"
+                                    BorderBrush="#CCCCCC"
+                                    BorderThickness="1.25"
+                                    CornerRadius="2"
+                                    VerticalAlignment="Center">
+                                <Grid ColumnDefinitions="*,1.25,4">
+                                    <Border Grid.Column="1" Background="#CCCCCC" />
+                                    <Border Grid.Column="2" Background="{Binding AgentSidebarIconFill}" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ==================== MAIN MULTI-PANE WORKSPACE ==================== -->
+        <Grid x:Name="WorkspaceGrid"
+              Grid.Row="1"
+              ColumnDefinitions="0,*,4,*,4,355">
+
+            <!-- COL 0: Collapsible Folder Explorer -->
+            <Border Grid.Column="0"
+                    Background="#252526"
+                    BorderBrush="#1E1E1E"
+                    BorderThickness="0,0,1,0"
+                    IsVisible="{Binding IsExplorerVisible}">
+                <Grid RowDefinitions="35,*">
+                    <Border Grid.Row="0" Padding="12,0" BorderBrush="#333337" BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding OpenedFolderName}"
+                                       FontSize="11"
+                                       FontWeight="Bold"
+                                       Foreground="#BBBBBB"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                            <Button Grid.Column="1"
+                                    Classes="toolbar-btn"
+                                    Content="✕"
+                                    Padding="4,2"
+                                    Command="{Binding ToggleExplorerCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FolderFiles}" Margin="4,6">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="models:ExplorerFileItem">
+                                    <Button Classes="toolbar-btn"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left"
+                                            Padding="8,5"
+                                            Command="{Binding #RootWindow.DataContext.OpenExplorerFileCommand}"
+                                            CommandParameter="{Binding}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <TextBlock Text="{Binding Icon}" FontSize="12" />
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="12.5"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- COL 1: Tabbed Monaco Code Editor -->
+            <Grid Grid.Column="1" RowDefinitions="35,Auto,*">
+                <!-- Row 0: Classic Tab Bar -->
+                <Border Grid.Row="0" Background="#252526" BorderBrush="#1E1E1E" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <ScrollViewer Grid.Column="0"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <ListBox Classes="tab-strip"
+                                     ItemsSource="{Binding Tabs}"
+                                     SelectedItem="{Binding ActiveTab, Mode=TwoWay}">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="models:DocumentTab">
+                                        <Grid RowDefinitions="2,*">
+                                            <Border Grid.Row="0" Classes="tab-top-accent" Height="2" />
+                                            <StackPanel Grid.Row="1"
+                                                        Orientation="Horizontal"
+                                                        Spacing="8"
+                                                        Margin="12,0,6,0"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DisplayTitle}"
+                                                           FontSize="12.5"
+                                                           VerticalAlignment="Center" />
+                                                <Button Classes="toolbar-btn"
+                                                        Content="×"
+                                                        FontSize="14"
+                                                        Padding="5,0"
+                                                        ToolTip.Tip="Close Tab"
+                                                        Command="{Binding #RootWindow.DataContext.CloseTabCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+
+                        <Button Grid.Column="1"
+                                Classes="toolbar-btn"
+                                Content="+"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Margin="4,0,6,0"
+                                ToolTip.Tip="New Tab (Ctrl+N)"
+                                Command="{Binding NewFileCommand}" />
+                    </Grid>
+                </Border>
+
+                <!-- Row 1: Whole-Turn Reversible Diff Notification Bar -->
+                <Border Grid.Row="1"
+                        Background="#1A2C21"
+                        BorderBrush="#2EA043"
+                        BorderThickness="0,0,0,1"
+                        Padding="12,6"
+                        IsVisible="{Binding ActiveTabHasPendingDiffs}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding ActiveTabDiffBannerText}"
+                                   FontSize="12"
+                                   Foreground="#7EE787"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Classes="success-btn"
+                                    Content="✓ Keep All Edits"
+                                    Command="{Binding AcceptActiveTabTurnCommand}" />
+                            <Button Classes="accent-btn"
+                                    Content="↻ Restore Turn"
+                                    Padding="8,3"
+                                    FontSize="11.5"
+                                    IsVisible="{Binding ActiveTabCanRestoreTurn}"
+                                    Command="{Binding RestoreActiveTabTurnCommand}" />
+                            <Button Classes="danger-btn"
+                                    Content="⟲ Cancel Whole Turn"
+                                    Command="{Binding CancelActiveTabTurnCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Row 2: Offline Monaco Surface -->
+                <controls:PlatformWebView x:Name="MonacoSurface"
+                                          Grid.Row="2"
+                                          AllowDefaultContextMenu="False"
+                                          AllowBrowserZoom="False" />
+            </Grid>
+
+            <!-- COL 2: Editor <-> Preview Splitter -->
+            <GridSplitter Grid.Column="2"
+                          Width="4"
+                          Background="#252526"
+                          ResizeDirection="Columns"
+                          IsVisible="{Binding IsDockedPreviewVisible}" />
+
+            <!-- COL 3: Docked Chromium Previewer -->
+            <Border Grid.Column="3"
+                    Background="#1E1E1E"
+                    IsVisible="{Binding IsDockedPreviewVisible}">
+                <Grid RowDefinitions="35,*">
+                    <Border Grid.Row="0" Background="#252526" BorderBrush="#333337" BorderThickness="0,0,0,1" Padding="10,0">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                                <TextBlock Text="🌐 Preview"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="#E0E0E0"
+                                           VerticalAlignment="Center" />
+                                <Border Background="#1E1E1E" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="3" Padding="6,1">
+                                    <TextBlock Text="{Binding PreviewTargetTitle}"
+                                               FontSize="11"
+                                               Foreground="#9CDCFE" />
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <!-- Live Edits vs Last Saved State Toggle -->
+                                <Border Background="#1E1E1E" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="4" Padding="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="2">
+                                        <Button Content="⚡ Live"
+                                                ToolTip.Tip="Render live unsaved edits in real time as you type"
+                                                Command="{Binding SetLivePreviewModeCommand}"
+                                                Background="{Binding LiveModeButtonBg}"
+                                                Foreground="#FFFFFF"
+                                                BorderThickness="0"
+                                                Padding="7,2"
+                                                FontSize="11"
+                                                CornerRadius="3" />
+                                        <Button Content="💾 Saved"
+                                                ToolTip.Tip="Render strictly from last saved state on disk (Ctrl+S)"
+                                                Command="{Binding SetSavedPreviewModeCommand}"
+                                                Background="{Binding SavedModeButtonBg}"
+                                                Foreground="#FFFFFF"
+                                                BorderThickness="0"
+                                                Padding="7,2"
+                                                FontSize="11"
+                                                CornerRadius="3" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Button Classes="toolbar-btn"
+                                        Content="↻"
+                                        FontSize="13"
+                                        Padding="6,2"
+                                        ToolTip.Tip="Reload Preview"
+                                        Command="{Binding RefreshPreviewCommand}" />
+
+                                <Button Classes="toolbar-btn"
+                                        Content="⧉ Detach"
+                                        FontSize="11.5"
+                                        Padding="6,2"
+                                        ToolTip.Tip="Detach Chromium Previewer into a separate window"
+                                        Command="{Binding DetachPreviewCommand}" />
+
+                                <Button Classes="toolbar-btn"
+                                        Content="✕"
+                                        FontSize="12"
+                                        Padding="5,2"
+                                        ToolTip.Tip="Close Preview Pane"
+                                        Command="{Binding TogglePreviewPaneCommand}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <controls:PlatformWebView x:Name="DockedPreviewSurfaceControl"
+                                              Grid.Row="1"
+                                              AllowDefaultContextMenu="True"
+                                              AllowBrowserZoom="True" />
+                </Grid>
+            </Border>
+
+            <!-- COL 4: Chat Splitter -->
+            <GridSplitter Grid.Column="4"
+                          Width="4"
+                          Background="#252526"
+                          ResizeDirection="Columns"
+                          IsVisible="{Binding IsChatVisible}" />
+
+            <!-- COL 5: Right-Side Local Qwen Chat & Agent Panel -->
+            <Border Grid.Column="5"
+                    Background="#252526"
+                    BorderBrush="#1E1E1E"
+                    BorderThickness="1,0,0,0"
+                    IsVisible="{Binding IsChatVisible}">
+                <Grid RowDefinitions="35,*,Auto">
+                    <!-- Chat Header -->
+                    <Border Grid.Row="0" Background="#2D2D30" BorderBrush="#38383D" BorderThickness="0,0,0,1" Padding="10,0">
+                        <Grid ColumnDefinitions="*,8,Auto">
+                            <Grid Grid.Column="0" ColumnDefinitions="Auto,7,Auto,7,*" VerticalAlignment="Center">
+                                <Ellipse Grid.Column="0"
+                                         Width="8"
+                                         Height="8"
+                                         Fill="{Binding OllamaDotBrush}"
+                                         VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding OllamaHeaderSummary}"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="4"
+                                           Text="{Binding OllamaEndpointShort}"
+                                           FontSize="11"
+                                           Foreground="#8A8A8A"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                <Button Classes="toolbar-btn"
+                                        Content="⚙"
+                                        FontSize="13"
+                                        Padding="6,2"
+                                        ToolTip.Tip="Configure Local or LAN Ollama Server"
+                                        Command="{Binding OpenSettingsCommand}" />
+                                <Button Classes="toolbar-btn"
+                                        Content="🗑"
+                                        FontSize="12"
+                                        Padding="6,2"
+                                        ToolTip.Tip="Clear Conversation History"
+                                        Command="{Binding ClearChatCommand}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Conversation Turns Scroll Area -->
+                    <ScrollViewer x:Name="ChatScrollViewer"
+                                  Grid.Row="1"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="12" Margin="10,10,16,10">
+                            <!-- Empty State Guidance Card -->
+                            <Border Background="#1E1E1E"
+                                    BorderBrush="#333337"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="12"
+                                    IsVisible="{Binding !ChatTurns.Count}">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="minK Local Agent"
+                                               FontSize="12.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="#569CD6" />
+                                    <TextBlock Text="Connected straight to your local Ollama server. Zero telemetry or frontier cloud traffic."
+                                               FontSize="11.5"
+                                               Foreground="#9A9A9A"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Text="• Ask your local model to edit the active document.&#x0a;• Every edit is highlighted inline.&#x0a;• Hover any marked line to Keep/Revert single edits, or Cancel / Restore a turn below."
+                                               FontSize="11.5"
+                                               Foreground="#B5B5B5"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Turn Cards -->
+                            <ItemsControl ItemsSource="{Binding ChatTurns}" HorizontalAlignment="Stretch">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:ChatTurn">
+                                        <StackPanel Spacing="6" Margin="0,0,0,12" HorizontalAlignment="Stretch">
+                                            <!-- User Prompt Bubble -->
+                                            <Border Background="#093B5E"
+                                                    BorderBrush="#0E639C"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="10,7"
+                                                    HorizontalAlignment="Stretch">
+                                                <StackPanel Spacing="3">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="You"
+                                                                   FontSize="10.5"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#75BEFF" />
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding TimeDisplay}"
+                                                                   FontSize="10"
+                                                                   Foreground="#85A5C2" />
+                                                    </Grid>
+                                                    <SelectableTextBlock Text="{Binding UserPrompt}"
+                                                                         FontSize="12.5"
+                                                                         Foreground="#F0F6FC"
+                                                                         TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Assistant Response & Turn Reversal Controls -->
+                                            <Border Background="#1E1E1E"
+                                                    BorderBrush="#38383D"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="10,8"
+                                                    HorizontalAlignment="Stretch">
+                                                <StackPanel Spacing="8">
+                                                    <SelectableTextBlock Text="{Binding AssistantMessage}"
+                                                                         FontSize="12.5"
+                                                                         Foreground="#D4D4D4"
+                                                                         TextWrapping="Wrap" />
+
+                                                    <!-- Whole-Turn Edit Status & Cancel/Restore/Accept Bar -->
+                                                    <Border Background="#252528"
+                                                            BorderBrush="#3C3C42"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4"
+                                                            Padding="8,6"
+                                                            IsVisible="{Binding HasEdits}">
+                                                        <StackPanel Spacing="6">
+                                                            <TextBlock Text="{Binding EditStatusBadge}"
+                                                                       FontSize="11"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{Binding EditStatusBrush}"
+                                                                       TextWrapping="Wrap" />
+
+                                                            <WrapPanel Orientation="Horizontal">
+                                                                <Button Classes="success-btn"
+                                                                        Content="✓ Keep All"
+                                                                        Margin="0,0,6,2"
+                                                                        ToolTip.Tip="Accept all pending edits in this turn"
+                                                                        IsVisible="{Binding CanAcceptAll}"
+                                                                        Command="{Binding #RootWindow.DataContext.AcceptTurnCommand}"
+                                                                        CommandParameter="{Binding}" />
+                                                                <Button Classes="accent-btn"
+                                                                        Content="↻ Restore"
+                                                                        Padding="8,3"
+                                                                        FontSize="11.5"
+                                                                        Margin="0,0,6,2"
+                                                                        ToolTip.Tip="Restore all edits from this turn"
+                                                                        IsVisible="{Binding CanRestoreTurn}"
+                                                                        Command="{Binding #RootWindow.DataContext.RestoreTurnCommand}"
+                                                                        CommandParameter="{Binding}" />
+                                                                <Button Classes="danger-btn"
+                                                                        Content="⟲ Cancel"
+                                                                        Margin="0,0,0,2"
+                                                                        ToolTip.Tip="Cancel and revert this turn's edits"
+                                                                        IsVisible="{Binding CanRevertTurn}"
+                                                                        Command="{Binding #RootWindow.DataContext.CancelTurnCommand}"
+                                                                        CommandParameter="{Binding}" />
+                                                            </WrapPanel>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Prompt Composer -->
+                    <Border Grid.Row="2"
+                            Background="#1E1E1E"
+                            BorderBrush="#333337"
+                            BorderThickness="0,1,0,0"
+                            Padding="10">
+                        <StackPanel Spacing="7">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Button Grid.Column="0"
+                                        Content="{Binding AgentModeLabel}"
+                                        Background="{Binding AgentModePillBg}"
+                                        Foreground="#E2E8F0"
+                                        BorderBrush="#3E5C47"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8,2"
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        ToolTip.Tip="Toggle between applying marked edits to the active document vs pure chat Q&amp;A"
+                                        Command="{Binding ToggleAgentEditModeCommand}" />
+
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ChatTargetLabel}"
+                                           FontSize="11"
+                                           Foreground="#8A8A8A"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="8,0,0,0" />
+                            </Grid>
+
+                            <TextBox x:Name="ChatPromptBox"
+                                     Text="{Binding ChatInput, Mode=TwoWay}"
+                                     Watermark="Ask local Qwen to edit active file... (Enter to send, Shift+Enter for newline)"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MinHeight="64"
+                                     MaxHeight="150"
+                                     FontSize="12.5"
+                                     Background="#252526"
+                                     BorderBrush="#3C3C3C" />
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="Local inference • Background thread"
+                                           FontSize="10.5"
+                                           Foreground="#6E6E6E"
+                                           VerticalAlignment="Center" />
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                    <Button Classes="danger-btn"
+                                            Content="■ Stop"
+                                            Padding="12,5"
+                                            IsVisible="{Binding IsGenerating}"
+                                            Command="{Binding StopGenerationCommand}" />
+                                    <Button Classes="accent-btn"
+                                            Content="Send ↵"
+                                            Padding="14,5"
+                                            IsVisible="{Binding IsNotGenerating}"
+                                            Command="{Binding SendPromptCommand}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ==================== CLASSIC BLUE BOTTOM STATUS BAR ==================== -->
+        <Border Grid.Row="2" Background="#007ACC" Padding="10,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                    <Button Background="Transparent"
+                            Foreground="#FFFFFF"
+                            BorderThickness="0"
+                            Padding="4,1"
+                            FontSize="11.5"
+                            ToolTip.Tip="Click to configure local or LAN Ollama server"
+                            Command="{Binding OpenSettingsCommand}"
+                            Content="{Binding OllamaStatusBarText}" />
+
+                    <TextBlock Text="{Binding PreviewModeStatusText}"
+                               FontSize="11.5"
+                               Foreground="#E6F3FF"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding CursorStatusText}"
+                               FontSize="11.5"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="UTF-8"
+                               FontSize="11.5"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center" />
+                    <Button Background="Transparent"
+                            Foreground="#FFFFFF"
+                            BorderThickness="0"
+                            Padding="4,1"
+                            FontSize="11.5"
+                            ToolTip.Tip="Change Syntax Highlighting Mode"
+                            Content="{Binding ActiveLanguageDisplay}">
+                        <Button.Flyout>
+                            <MenuFlyout Placement="TopEdgeAlignedRight">
+                                <MenuItem Header="HTML" Command="{Binding SetActiveLanguageCommand}" CommandParameter="html" />
+                                <MenuItem Header="CSS" Command="{Binding SetActiveLanguageCommand}" CommandParameter="css" />
+                                <MenuItem Header="SCSS" Command="{Binding SetActiveLanguageCommand}" CommandParameter="scss" />
+                                <MenuItem Header="JavaScript" Command="{Binding SetActiveLanguageCommand}" CommandParameter="javascript" />
+                                <MenuItem Header="TypeScript" Command="{Binding SetActiveLanguageCommand}" CommandParameter="typescript" />
+                                <MenuItem Header="Python" Command="{Binding SetActiveLanguageCommand}" CommandParameter="python" />
+                                <MenuItem Header="JSON" Command="{Binding SetActiveLanguageCommand}" CommandParameter="json" />
+                                <MenuItem Header="Markdown" Command="{Binding SetActiveLanguageCommand}" CommandParameter="markdown" />
+                                <MenuItem Header="XML / SVG" Command="{Binding SetActiveLanguageCommand}" CommandParameter="xml" />
+                                <MenuItem Header="YAML" Command="{Binding SetActiveLanguageCommand}" CommandParameter="yaml" />
+                                <MenuItem Header="Plain Text" Command="{Binding SetActiveLanguageCommand}" CommandParameter="plaintext" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

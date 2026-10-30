@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>minK Monaco Host</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+    }
+
+    #editor-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Marked Agent Diff Line & Colored Line Number Styles */
+    .mink-diff-added-line {
+      background-color: rgba(46, 160, 67, 0.16) !important;
+    }
+    .mink-diff-replaced-line {
+      background-color: rgba(46, 160, 67, 0.20) !important;
+    }
+    .mink-diff-gutter-added {
+      border-left: 3px solid #3fb950 !important;
+      margin-left: 3px;
+    }
+    .mink-diff-gutter-deleted {
+      border-left: 3px solid #f85149 !important;
+      margin-left: 3px;
+    }
+    .mink-diff-linenum-added {
+      color: #4ae168 !important;
+      font-weight: 600 !important;
+    }
+    .mink-diff-linenum-deleted {
+      color: #ff7b72 !important;
+      font-weight: 600 !important;
+    }
+
+    /* Deleted Lines ViewZone Widget */
+    .mink-deleted-zone {
+      background: rgba(248, 81, 73, 0.13);
+      border-left: 3px solid #f85149;
+      border-top: 1px solid rgba(248, 81, 73, 0.28);
+      border-bottom: 1px solid rgba(248, 81, 73, 0.28);
+      padding: 2px 10px 2px 12px;
+      font-family: Consolas, 'Cascadia Code', 'Courier New', monospace;
+      font-size: 13px;
+      color: #ffa198;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      overflow: hidden;
+      pointer-events: auto;
+      z-index: 10;
+    }
+    .mink-deleted-lines {
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.9;
+      line-height: 18px;
+    }
+    .mink-zone-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+
+    /* Inline Hover Context Menu for Individual Edits */
+    #hunk-hover-menu {
+      position: fixed;
+      display: none;
+      z-index: 9999;
+      background: #252526;
+      border: 1px solid #007acc;
+      border-radius: 5px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+      padding: 7px 9px;
+      min-width: 280px;
+      max-width: 520px;
+      color: #cccccc;
+      font-size: 12px;
+      pointer-events: auto;
+    }
+    #hunk-hover-menu.visible {
+      display: block;
+    }
+    .hover-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #383838;
+    }
+    .hover-title {
+      font-weight: 600;
+      color: #56d4ff;
+      font-size: 11.5px;
+      letter-spacing: 0.2px;
+    }
+    .hover-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hunk-btn {
+      border: 1px solid transparent;
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: filter 0.12s ease, background 0.12s ease;
+    }
+    .hunk-btn:hover {
+      filter: brightness(1.15);
+    }
+    .hunk-btn-accept {
+      background: #238636;
+      border-color: #2ea043;
+      color: #ffffff;
+    }
+    .hunk-btn-revert {
+      background: #b62324;
+      border-color: #f85149;
+      color: #ffffff;
+    }
+    .hunk-btn-turn {
+      background: #333337;
+      border-color: #505057;
+      color: #dcdcdc;
+    }
+    .hover-diff-preview {
+      max-height: 125px;
+      overflow-y: auto;
+      background: #1a1a1b;
+      border: 1px solid #333333;
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-family: Consolas, 'Cascadia Code', monospace;
+      font-size: 11.5px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .diff-old-line {
+      color: #ff8e88;
+      background: rgba(248, 81, 73, 0.12);
+      display: block;
+      padding: 0 3px;
+    }
+    .diff-empty-note {
+      color: #7ee787;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div id="editor-container"></div>
+
+  <!-- Inline Hover Context Menu for Marked Agent Edits -->
+  <div id="hunk-hover-menu">
+    <div class="hover-header">
+      <span class="hover-title" id="hover-hunk-label">Agent Edit</span>
+      <div class="hover-actions">
+        <button class="hunk-btn hunk-btn-accept" id="btn-hover-accept" title="Keep this individual edit">✓ Keep Edit</button>
+        <button class="hunk-btn hunk-btn-revert" id="btn-hover-revert" title="Revert this individual edit back to original">✕ Revert Edit</button>
+        <button class="hunk-btn hunk-btn-turn" id="btn-hover-cancel-turn" title="Cancel and revert the entire agent turn">⟲ Cancel Turn</button>
+      </div>
+    </div>
+    <div class="hover-diff-preview" id="hover-diff-body"></div>
+  </div>
+
+  <script src="./vs/loader.js"></script>
+  <script>
+    (function () {
+      const VOID_HTML_TAGS = new Set([
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+        'link', 'meta', 'param', 'source', 'track', 'wbr'
+      ]);
+
+      let editor = null;
+      let activeTabId = null;
+      let suppressChangeEvent = false;
+      let autoCloseTagsEnabled = true;
+      let currentTabSize = 2;
+
+      // Map<tabId, { model, viewState, hunks: Array, viewZoneIds: Array, turnSnapshots: Map<turnId, string> }>
+      const tabs = new Map();
+
+      const hoverMenu = document.getElementById('hunk-hover-menu');
+      const hoverLabel = document.getElementById('hover-hunk-label');
+      const hoverDiffBody = document.getElementById('hover-diff-body');
+      const btnAccept = document.getElementById('btn-hover-accept');
+      const btnRevert = document.getElementById('btn-hover-revert');
+      const btnCancelTurn = document.getElementById('btn-hover-cancel-turn');
+
+      let hoveredHunk = null;
+      let isMouseInsideMenu = false;
+      let hideMenuTimer = null;
+
+      function postToHost(payload) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify(payload));
+        }
+      }
+
+      hoverMenu.addEventListener('mouseenter', () => {
+        isMouseInsideMenu = true;
+        if (hideMenuTimer) {
+          clearTimeout(hideMenuTimer);
+          hideMenuTimer = null;
+        }
+      });
+
+      hoverMenu.addEventListener('mouseleave', () => {
+        isMouseInsideMenu = false;
+        scheduleHideHoverMenu();
+      });
+
+      btnAccept.addEventListener('click', () => {
+        if (hoveredHunk && activeTabId) {
+          acceptHunk(activeTabId, hoveredHunk.id);
+          hideHoverMenuImmediate();
+        }
+      });
+
+      btnRevert.addEventListener('click', () => {
+        if (hoveredHunk && activeTabId) {
+          revertHunk(activeTabId, hoveredHunk.id);
+          hideHoverMenuImmediate();
+        }
+      });
+
+      btnCancelTurn.addEventListener('click', () => {
+        if (hoveredHunk && activeTabId) {
+          cancelWholeTurn(activeTabId, hoveredHunk.turnId);
+          hideHoverMenuImmediate();
+        }
+      });
+
+      function scheduleHideHoverMenu() {
+        if (hideMenuTimer) clearTimeout(hideMenuTimer);
+        hideMenuTimer = setTimeout(() => {
+          if (!isMouseInsideMenu) {
+            hideHoverMenuImmediate();
+          }
+        }, 240);
+      }
+
+      function hideHoverMenuImmediate() {
+        if (hideMenuTimer) {
+          clearTimeout(hideMenuTimer);
+          hideMenuTimer = null;
+        }
+        hoveredHunk = null;
+        hoverMenu.classList.remove('visible');
+      }
+
+      function showHoverMenuForHunk(hunk, hunkIndex, totalPending, clientX, clientY) {
+        if (hideMenuTimer) {
+          clearTimeout(hideMenuTimer);
+          hideMenuTimer = null;
+        }
+
+        const isSameHunk = hoveredHunk && hoveredHunk.id === hunk.id && hoverMenu.classList.contains('visible');
+        hoveredHunk = hunk;
+
+        hoverLabel.textContent = `Qwen Edit (${hunkIndex} of ${totalPending})`;
+        hoverDiffBody.innerHTML = '';
+
+        if (hunk.originalLines && hunk.originalLines.length > 0) {
+          hunk.originalLines.forEach(line => {
+            const span = document.createElement('span');
+            span.className = 'diff-old-line';
+            span.textContent = '- ' + line;
+            hoverDiffBody.appendChild(span);
+          });
+        } else {
+          const span = document.createElement('span');
+          span.className = 'diff-empty-note';
+          span.textContent = '+ Pure insertion (reverting removes added lines)';
+          hoverDiffBody.appendChild(span);
+        }
+
+        if (!isSameHunk) {
+          hoverMenu.classList.add('visible');
+          const menuWidth = hoverMenu.offsetWidth || 340;
+          const menuHeight = hoverMenu.offsetHeight || 95;
+
+          let left = Math.min(Math.max(12, clientX - 24), window.innerWidth - menuWidth - 14);
+          let top = clientY - menuHeight - 10;
+          if (top < 8) {
+            top = Math.min(window.innerHeight - menuHeight - 8, clientY + 18);
+          }
+
+          hoverMenu.style.left = left + 'px';
+          hoverMenu.style.top = top + 'px';
+        }
+      }
+
+      require.config({ paths: { 'vs': './vs' } });
+
+      require(['vs/editor/editor.main'], function () {
+        monaco.editor.defineTheme('mink-dark', {
+          base: 'vs-dark',
+          inherit: true,
+          rules: [
+            { token: 'comment', foreground: '6A9955' },
+            { token: 'keyword', foreground: '569CD6' },
+            { token: 'string', foreground: 'CE9178' },
+            { token: 'number', foreground: 'B5CEA8' },
+            { token: 'tag', foreground: '569CD6' },
+            { token: 'attribute.name', foreground: '9CDCFE' },
+            { token: 'attribute.value', foreground: 'CE9178' }
+          ],
+          colors: {
+            'editor.background': '#1e1e1e',
+            'editor.foreground': '#d4d4d4',
+            'editor.lineHighlightBackground': '#28282d',
+            'editor.selectionBackground': '#264f78',
+            'editorCursor.foreground': '#aeafad',
+            'editorLineNumber.foreground': '#4d88bb',
+            'editorLineNumber.activeForeground': '#56d4ff',
+            'editorIndentGuide.background1': '#333337',
+            'editorIndentGuide.activeBackground1': '#585860',
+            'editorGutter.background': '#1e1e1e'
+          }
+        });
+
+        ['html', 'xml'].forEach(lang => {
+          monaco.languages.setLanguageConfiguration(lang, {
+            brackets: [
+              ['<!--', '-->'],
+              ['<', '>'],
+              ['{', '}'],
+              ['(', ')'],
+              ['[', ']']
+            ],
+            autoClosingPairs: [
+              { open: '{', close: '}' },
+              { open: '[', close: ']' },
+              { open: '(', close: ')' },
+              { open: '"', close: '"' },
+              { open: "'", close: "'" },
+              { open: '<!--', close: '-->', notIn: ['comment', 'string'] }
+            ],
+            surroundingPairs: [
+              { open: '"', close: '"' },
+              { open: "'", close: "'" },
+              { open: '{', close: '}' },
+              { open: '[', close: ']' },
+              { open: '(', close: ')' },
+              { open: '<', close: '>' }
+            ],
+            onEnterRules: [
+              {
+                beforeText: new RegExp('<(?!(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\\b)([_:\\w][_:\\w-.\\d]*)(?:[^>]*[^/])?>\\s*$', 'i'),
+                afterText: /^<\/([_:\w][_:\w-.\d]*)\s*>/i,
+                action: { indentAction: monaco.languages.IndentAction.IndentOutdent }
+              }
+            ]
+          });
+        });
+
+        editor = monaco.editor.create(document.getElementById('editor-container'), {
+          theme: 'mink-dark',
+          fontSize: 14,
+          fontFamily: "'Cascadia Code', Consolas, 'Courier New', monospace",
+          fontLigatures: true,
+          wordWrap: 'on',
+          automaticLayout: true,
+          minimap: { enabled: true, maxColumn: 80, renderCharacters: false },
+          autoClosingBrackets: 'always',
+          autoClosingQuotes: 'always',
+          autoSurround: 'languageDefined',
+          formatOnPaste: true,
+          matchBrackets: 'always',
+          bracketPairColorization: { enabled: true },
+          renderLineHighlight: 'all',
+          scrollBeyondLastLine: false,
+          smoothScrolling: true,
+          padding: { top: 8, bottom: 8 }
+        });
+
+        editor.onDidChangeModelContent((e) => {
+          const model = editor.getModel();
+          if (!model || !activeTabId) return;
+
+          if (!suppressChangeEvent) {
+            handleHtmlAutoCloseTag(e, model);
+
+            postToHost({
+              type: 'contentChanged',
+              tabId: activeTabId,
+              content: model.getValue()
+            });
+          }
+        });
+
+        editor.onDidChangeCursorPosition((e) => {
+          if (!activeTabId) return;
+          postToHost({
+            type: 'cursorChanged',
+            tabId: activeTabId,
+            line: e.position.lineNumber,
+            column: e.position.column
+          });
+        });
+
+        editor.onMouseMove((e) => {
+          if (!activeTabId || !e.target || !e.target.position) {
+            if (!isMouseInsideMenu) scheduleHideHoverMenu();
+            return;
+          }
+
+          const lineNumber = e.target.position.lineNumber;
+          const found = findHunkAtLine(activeTabId, lineNumber);
+          if (found) {
+            showHoverMenuForHunk(
+              found.hunk,
+              found.index,
+              found.totalPending,
+              e.event.posx,
+              e.event.posy
+            );
+          } else if (!isMouseInsideMenu) {
+            scheduleHideHoverMenu();
+          }
+        });
+
+        editor.onDidScrollChange(() => {
+          hideHoverMenuImmediate();
+        });
+
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+          postToHost({ type: 'shortcut', action: 'save' });
+        });
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => {
+          postToHost({ type: 'shortcut', action: 'saveAs' });
+        });
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyO, () => {
+          postToHost({ type: 'shortcut', action: 'openFile' });
+        });
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyN, () => {
+          postToHost({ type: 'shortcut', action: 'newFile' });
+        });
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => {
+          postToHost({ type: 'shortcut', action: 'toggleExplorer' });
+        });
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Comma, () => {
+          postToHost({ type: 'shortcut', action: 'openPreferences' });
+        });
+
+        postToHost({ type: 'ready' });
+      });
+
+      function handleHtmlAutoCloseTag(e, model) {
+        if (!autoCloseTagsEnabled) return;
+        if (e.isUndoing || e.isRedoing || !e.changes || e.changes.length !== 1) return;
+        const lang = model.getLanguageId();
+        if (lang !== 'html' && lang !== 'xml') return;
+
+        const change = e.changes[0];
+        if (change.text !== '>') return;
+
+        const lineNum = change.range.startLineNumber;
+        const afterCol = change.range.startColumn + 1;
+        const startScanLine = Math.max(1, lineNum - 4);
+        const textBefore = model.getValueInRange(new monaco.Range(startScanLine, 1, lineNum, afterCol));
+
+        if (textBefore.endsWith('/>') || textBefore.endsWith('-->') || textBefore.endsWith('?>')) return;
+
+        const tagMatch = textBefore.match(/<([a-zA-Z][a-zA-Z0-9:-]*)(?:\s[^<>]*?)?>$/);
+        if (!tagMatch) return;
+
+        const tagName = tagMatch[1];
+        if (lang === 'html' && VOID_HTML_TAGS.has(tagName.toLowerCase())) return;
+
+        const restOfLine = model.getValueInRange(new monaco.Range(lineNum, afterCol, lineNum, model.getLineMaxColumn(lineNum)));
+        if (restOfLine.trimStart().toLowerCase().startsWith('</' + tagName.toLowerCase() + '>')) return;
+
+        const closeText = `</${tagName}>`;
+        const cursorSelection = new monaco.Selection(lineNum, afterCol, lineNum, afterCol);
+
+        suppressChangeEvent = true;
+        try {
+          editor.executeEdits('mink-autoclose-tag', [
+            {
+              range: new monaco.Range(lineNum, afterCol, lineNum, afterCol),
+              text: closeText,
+              forceMoveMarkers: false
+            }
+          ], [cursorSelection]);
+          editor.setSelection(cursorSelection);
+        } finally {
+          suppressChangeEvent = false;
+        }
+      }
+
+      function ensureTabState(tabId, content, language) {
+        let state = tabs.get(tabId);
+        if (!state) {
+          const uri = monaco.Uri.parse('inmemory://mink/' + tabId);
+          const model = monaco.editor.createModel(content || '', language || 'html', uri);
+          model.updateOptions({ tabSize: currentTabSize, insertSpaces: true });
+          state = {
+            model,
+            viewState: null,
+            hunks: [],
+            viewZoneIds: [],
+            turnSnapshots: new Map()
+          };
+          tabs.set(tabId, state);
+        }
+        return state;
+      }
+
+      function switchTab(tabId, content, language) {
+        if (!editor) return;
+        hideHoverMenuImmediate();
+
+        if (activeTabId && tabs.has(activeTabId) && activeTabId !== tabId) {
+          const prev = tabs.get(activeTabId);
+          prev.viewState = editor.saveViewState();
+          clearEditorViewZones(prev);
+        }
+
+        const state = ensureTabState(tabId, content, language);
+        activeTabId = tabId;
+
+        if (editor.getModel() !== state.model) {
+          editor.setModel(state.model);
+        }
+
+        if (language && state.model.getLanguageId() !== language) {
+          monaco.editor.setModelLanguage(state.model, language);
+        }
+
+        if (typeof content === 'string' && state.model.getValue() !== content) {
+          suppressChangeEvent = true;
+          try {
+            state.model.setValue(content);
+          } finally {
+            suppressChangeEvent = false;
+          }
+        }
+
+        rebuildViewZonesForActiveTab(state);
+
+        if (state.viewState) {
+          editor.restoreViewState(state.viewState);
+        }
+        editor.focus();
+      }
+
+      function clearEditorViewZones(state) {
+        if (!editor || !state.viewZoneIds || state.viewZoneIds.length === 0) return;
+        editor.changeViewZones(accessor => {
+          state.viewZoneIds.forEach(id => accessor.removeZone(id));
+        });
+        state.viewZoneIds = [];
+      }
+
+      function rebuildViewZonesForActiveTab(state) {
+        if (!editor) return;
+        clearEditorViewZones(state);
+
+        const pendingDeletions = state.hunks.filter(h => !h.resolved && h.newLineCount === 0 && h.originalLines.length > 0);
+        if (pendingDeletions.length === 0) return;
+
+        editor.changeViewZones(accessor => {
+          pendingDeletions.forEach(hunk => {
+            let afterLine = hunk.anchorLine;
+            if (hunk.anchorLine > 0 && hunk.decorationId) {
+              const range = state.model.getDecorationRange(hunk.decorationId);
+              if (range) afterLine = range.startLineNumber;
+            }
+
+            const domNode = document.createElement('div');
+            domNode.className = 'mink-deleted-zone';
+
+            const linesDiv = document.createElement('div');
+            linesDiv.className = 'mink-deleted-lines';
+            const previewLines = hunk.originalLines.slice(0, 4).map(l => '- ' + l);
+            if (hunk.originalLines.length > 4) {
+              previewLines.push(`  ... (${hunk.originalLines.length - 4} more deleted lines)`);
+            }
+            linesDiv.textContent = previewLines.join('\n');
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'mink-zone-actions';
+
+            const keepBtn = document.createElement('button');
+            keepBtn.className = 'hunk-btn hunk-btn-accept';
+            keepBtn.textContent = '✓ Confirm Delete';
+            keepBtn.onmousedown = (ev) => { ev.stopPropagation(); };
+            keepBtn.onclick = (ev) => {
+              ev.stopPropagation();
+              acceptHunk(activeTabId, hunk.id);
+            };
+
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'hunk-btn hunk-btn-revert';
+            restoreBtn.textContent = '✕ Restore Lines';
+            restoreBtn.onmousedown = (ev) => { ev.stopPropagation(); };
+            restoreBtn.onclick = (ev) => {
+              ev.stopPropagation();
+              revertHunk(activeTabId, hunk.id);
+            };
+
+            actionsDiv.appendChild(keepBtn);
+            actionsDiv.appendChild(restoreBtn);
+            domNode.appendChild(linesDiv);
+            domNode.appendChild(actionsDiv);
+
+            const lineCountShown = Math.min(hunk.originalLines.length, 5);
+            const heightInPx = Math.max(28, lineCountShown * 18 + 8);
+
+            const zoneId = accessor.addZone({
+              afterLineNumber: afterLine,
+              heightInPx: heightInPx,
+              domNode: domNode
+            });
+            hunk.viewZoneId = zoneId;
+            state.viewZoneIds.push(zoneId);
+          });
+        });
+      }
+
+      function clearAllHunksForTab(state) {
+        if (!state) return;
+        const decIds = state.hunks
+          .filter(h => h.decorationId)
+          .map(h => h.decorationId);
+        if (decIds.length > 0) {
+          state.model.deltaDecorations(decIds, []);
+        }
+        clearEditorViewZones(state);
+        state.hunks = [];
+      }
+
+      function applyAgentTurn(tabId, turnId, snapshotBefore, newContent, hunks) {
+        const state = ensureTabState(tabId, newContent, 'html');
+        hideHoverMenuImmediate();
+
+        clearAllHunksForTab(state);
+        state.turnSnapshots.set(turnId, snapshotBefore);
+
+        const model = state.model;
+        const fullRange = model.getFullModelRange();
+
+        suppressChangeEvent = true;
+        try {
+          if (activeTabId === tabId && editor) {
+            editor.executeEdits('mink-agent-turn', [
+              { range: fullRange, text: newContent, forceMoveMarkers: true }
+            ]);
+          } else {
+            model.pushEditOperations([], [{ range: fullRange, text: newContent }], () => null);
+          }
+        } finally {
+          suppressChangeEvent = false;
+        }
+
+        const preparedHunks = [];
+        (hunks || []).forEach(h => {
+          const item = {
+            id: h.id,
+            turnId: h.turnId || turnId,
+            newStartLine: h.newStartLine,
+            newLineCount: h.newLineCount,
+            anchorLine: h.anchorLine,
+            originalLines: h.originalLines || [],
+            modifiedLines: h.modifiedLines || [],
+            decorationId: null,
+            viewZoneId: null,
+            resolved: false
+          };
+
+          if (item.newLineCount > 0) {
+            const startLine = Math.max(1, Math.min(item.newStartLine, model.getLineCount()));
+            const endLine = Math.max(startLine, Math.min(startLine + item.newLineCount - 1, model.getLineCount()));
+            const isReplacement = item.originalLines.length > 0;
+
+            const ids = model.deltaDecorations([], [
+              {
+                range: new monaco.Range(startLine, 1, endLine, model.getLineMaxColumn(endLine)),
+                options: {
+                  isWholeLine: true,
+                  className: isReplacement ? 'mink-diff-replaced-line' : 'mink-diff-added-line',
+                  linesDecorationsClassName: 'mink-diff-gutter-added',
+                  lineNumberClassName: 'mink-diff-linenum-added',
+                  stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+                }
+              }
+            ]);
+            item.decorationId = ids[0];
+          } else {
+            const anchor = Math.max(1, Math.min(item.anchorLine || 1, model.getLineCount()));
+            const ids = model.deltaDecorations([], [
+              {
+                range: new monaco.Range(anchor, 1, anchor, 1),
+                options: {
+                  isWholeLine: false,
+                  linesDecorationsClassName: 'mink-diff-gutter-deleted',
+                  lineNumberClassName: 'mink-diff-linenum-deleted',
+                  stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+                }
+              }
+            ]);
+            item.decorationId = ids[0];
+          }
+
+          preparedHunks.push(item);
+        });
+
+        state.hunks = preparedHunks;
+
+        if (activeTabId === tabId) {
+          rebuildViewZonesForActiveTab(state);
+          if (preparedHunks.length > 0) {
+            const firstLine = preparedHunks[0].newLineCount > 0
+              ? preparedHunks[0].newStartLine
+              : Math.max(1, preparedHunks[0].anchorLine);
+            editor.revealLineInCenterIfOutsideViewport(firstLine);
+          }
+        }
+      }
+
+      function findHunkAtLine(tabId, lineNumber) {
+        const state = tabs.get(tabId);
+        if (!state) return null;
+
+        const pending = state.hunks.filter(h => !h.resolved);
+        for (let i = 0; i < pending.length; i++) {
+          const h = pending[i];
+          if (!h.decorationId) continue;
+          const range = state.model.getDecorationRange(h.decorationId);
+          if (!range) continue;
+
+          if (h.newLineCount > 0) {
+            if (lineNumber >= range.startLineNumber && lineNumber <= range.endLineNumber) {
+              return { hunk: h, index: i + 1, totalPending: pending.length };
+            }
+          } else {
+            if (lineNumber === range.startLineNumber) {
+              return { hunk: h, index: i + 1, totalPending: pending.length };
+            }
+          }
+        }
+        return null;
+      }
+
+      function acceptHunk(tabId, hunkId) {
+        const state = tabs.get(tabId);
+        if (!state) return;
+        const hunk = state.hunks.find(h => h.id === hunkId && !h.resolved);
+        if (!hunk) return;
+
+        hunk.resolved = true;
+        if (hunk.decorationId) {
+          state.model.deltaDecorations([hunk.decorationId], []);
+          hunk.decorationId = null;
+        }
+        if (activeTabId === tabId) {
+          rebuildViewZonesForActiveTab(state);
+        }
+
+        const pendingCount = state.hunks.filter(h => !h.resolved).length;
+        postToHost({
+          type: 'hunkResolved',
+          tabId: tabId,
+          turnId: hunk.turnId,
+          hunkId: hunk.id,
+          action: 'accepted',
+          pendingCount: pendingCount,
+          content: state.model.getValue()
+        });
+      }
+
+      function revertHunk(tabId, hunkId) {
+        const state = tabs.get(tabId);
+        if (!state) return;
+        const hunk = state.hunks.find(h => h.id === hunkId && !h.resolved);
+        if (!hunk) return;
+
+        const model = state.model;
+        const decRange = hunk.decorationId ? model.getDecorationRange(hunk.decorationId) : null;
+
+        hunk.resolved = true;
+        if (hunk.decorationId) {
+          model.deltaDecorations([hunk.decorationId], []);
+          hunk.decorationId = null;
+        }
+
+        let editRange = null;
+        let replacementText = '';
+
+        if (hunk.newLineCount > 0 && decRange) {
+          const startLine = decRange.startLineNumber;
+          const endLine = decRange.endLineNumber;
+
+          if (hunk.originalLines.length > 0) {
+            editRange = new monaco.Range(startLine, 1, endLine, model.getLineMaxColumn(endLine));
+            replacementText = hunk.originalLines.join('\n');
+          } else {
+            const totalLines = model.getLineCount();
+            if (endLine < totalLines) {
+              editRange = new monaco.Range(startLine, 1, endLine + 1, 1);
+              replacementText = '';
+            } else if (startLine > 1) {
+              editRange = new monaco.Range(
+                startLine - 1,
+                model.getLineMaxColumn(startLine - 1),
+                endLine,
+                model.getLineMaxColumn(endLine)
+              );
+              replacementText = '';
+            } else {
+              editRange = new monaco.Range(1, 1, endLine, model.getLineMaxColumn(endLine));
+              replacementText = '';
+            }
+          }
+        } else if (hunk.newLineCount === 0 && hunk.originalLines.length > 0) {
+          if (hunk.anchorLine === 0) {
+            if (model.getLineCount() === 1 && model.getLineContent(1) === '') {
+              editRange = new monaco.Range(1, 1, 1, 1);
+              replacementText = hunk.originalLines.join('\n');
+            } else {
+              editRange = new monaco.Range(1, 1, 1, 1);
+              replacementText = hunk.originalLines.join('\n') + '\n';
+            }
+          } else {
+            const anchor = decRange ? decRange.startLineNumber : Math.min(hunk.anchorLine, model.getLineCount());
+            const col = model.getLineMaxColumn(anchor);
+            editRange = new monaco.Range(anchor, col, anchor, col);
+            replacementText = '\n' + hunk.originalLines.join('\n');
+          }
+        }
+
+        if (editRange) {
+          suppressChangeEvent = true;
+          try {
+            if (activeTabId === tabId && editor) {
+              editor.executeEdits('mink-revert-hunk', [
+                { range: editRange, text: replacementText, forceMoveMarkers: true }
+              ]);
+            } else {
+              model.pushEditOperations([], [{ range: editRange, text: replacementText }], () => null);
+            }
+          } finally {
+            suppressChangeEvent = false;
+          }
+        }
+
+        if (activeTabId === tabId) {
+          rebuildViewZonesForActiveTab(state);
+        }
+
+        const pendingCount = state.hunks.filter(h => !h.resolved).length;
+        postToHost({
+          type: 'hunkResolved',
+          tabId: tabId,
+          turnId: hunk.turnId,
+          hunkId: hunk.id,
+          action: 'reverted',
+          pendingCount: pendingCount,
+          content: state.model.getValue()
+        });
+      }
+
+      function acceptWholeTurn(tabId, turnId) {
+        const state = tabs.get(tabId);
+        if (!state) return;
+        hideHoverMenuImmediate();
+
+        state.hunks.forEach(h => {
+          if (!turnId || h.turnId === turnId) {
+            h.resolved = true;
+            if (hunkHasDecoration(h)) {
+              state.model.deltaDecorations([h.decorationId], []);
+              h.decorationId = null;
+            }
+          }
+        });
+
+        if (activeTabId === tabId) {
+          rebuildViewZonesForActiveTab(state);
+        }
+
+        const pendingCount = state.hunks.filter(h => !h.resolved).length;
+        postToHost({
+          type: 'turnResolved',
+          tabId: tabId,
+          turnId: turnId,
+          action: 'acceptedAll',
+          pendingCount: pendingCount,
+          content: state.model.getValue()
+        });
+      }
+
+      function hunkHasDecoration(h) {
+        return Boolean(h && h.decorationId);
+      }
+
+      function cancelWholeTurn(tabId, turnId, explicitSnapshotBefore) {
+        const state = tabs.get(tabId);
+        if (!state) return;
+        hideHoverMenuImmediate();
+
+        const snapshot = typeof explicitSnapshotBefore === 'string'
+          ? explicitSnapshotBefore
+          : state.turnSnapshots.get(turnId);
+
+        clearAllHunksForTab(state);
+
+        if (typeof snapshot === 'string') {
+          const fullRange = state.model.getFullModelRange();
+          suppressChangeEvent = true;
+          try {
+            if (activeTabId === tabId && editor) {
+              editor.executeEdits('mink-cancel-turn', [
+                { range: fullRange, text: snapshot, forceMoveMarkers: true }
+              ]);
+            } else {
+              state.model.pushEditOperations([], [{ range: fullRange, text: snapshot }], () => null);
+            }
+          } finally {
+            suppressChangeEvent = false;
+          }
+        }
+
+        postToHost({
+          type: 'turnResolved',
+          tabId: tabId,
+          turnId: turnId,
+          action: 'revertedTurn',
+          pendingCount: 0,
+          content: state.model.getValue()
+        });
+      }
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.addEventListener('message', (event) => {
+          const msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (!msg || !msg.type) return;
+
+          switch (msg.type) {
+            case 'switchTab':
+              switchTab(msg.tabId, msg.content, msg.language);
+              break;
+
+            case 'closeTab': {
+              const st = tabs.get(msg.tabId);
+              if (st) {
+                clearAllHunksForTab(st);
+                st.model.dispose();
+                tabs.delete(msg.tabId);
+              }
+              if (activeTabId === msg.tabId) {
+                activeTabId = null;
+              }
+              break;
+            }
+
+            case 'setLanguage': {
+              const st = tabs.get(msg.tabId);
+              if (st) {
+                monaco.editor.setModelLanguage(st.model, msg.language || 'plaintext');
+              }
+              break;
+            }
+
+            case 'updateSettings': {
+              autoCloseTagsEnabled = msg.autoClose !== false;
+              currentTabSize = msg.tabSize === 4 ? 4 : 2;
+              if (editor) {
+                editor.updateOptions({
+                  fontSize: msg.fontSize || 14,
+                  tabSize: currentTabSize,
+                  insertSpaces: true,
+                  wordWrap: msg.wordWrap ? 'on' : 'off',
+                  minimap: { enabled: msg.showMinimap !== false, maxColumn: 80, renderCharacters: false },
+                  autoClosingBrackets: autoCloseTagsEnabled ? 'always' : 'never',
+                  autoClosingQuotes: autoCloseTagsEnabled ? 'always' : 'never'
+                });
+              }
+              tabs.forEach(st => {
+                if (st && st.model) {
+                  st.model.updateOptions({ tabSize: currentTabSize, insertSpaces: true });
+                }
+              });
+              break;
+            }
+
+            case 'formatDocument':
+              if (editor) {
+                const action = editor.getAction('editor.action.formatDocument');
+                if (action) action.run();
+              }
+              break;
+
+            case 'applyAgentTurn':
+              applyAgentTurn(msg.tabId, msg.turnId, msg.snapshotBefore, msg.newContent, msg.hunks);
+              break;
+
+            case 'acceptWholeTurn':
+              acceptWholeTurn(msg.tabId, msg.turnId);
+              break;
+
+            case 'cancelWholeTurn':
+              cancelWholeTurn(msg.tabId, msg.turnId, msg.snapshotBefore);
+              break;
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

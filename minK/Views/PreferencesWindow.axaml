@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="mink.Views.PreferencesWindow"
+        Title="minK Preferences"
+        Icon="/Assets/mink.ico"
+        Width="500"
+        Height="535"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        Foreground="#CCCCCC">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
+            <Image Source="/Assets/mink-glyph.png"
+                   Height="28"
+                   Stretch="Uniform"
+                   RenderOptions.BitmapInterpolationMode="HighQuality"
+                   VerticalAlignment="Center" />
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="minK Preferences"
+                           FontSize="17"
+                           FontWeight="Bold"
+                           Foreground="#F0F4F8" />
+                <TextBlock Text="General editor, preview, and workspace settings."
+                           FontSize="12"
+                           Foreground="#8A8A8A" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Form Body -->
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12" Margin="0,0,4,0">
+                <!-- Editor Section -->
+                <Border Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="5" Padding="14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="EDITOR"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#569CD6" />
+
+                        <Grid ColumnDefinitions="*,14,*">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Font Size (px)" FontSize="12" Foreground="#CCCCCC" />
+                                <TextBox x:Name="FontSizeBox"
+                                         Background="#1E1E1E"
+                                         BorderBrush="#3C3C3C"
+                                         FontSize="13" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="Indentation (Tab Size)" FontSize="12" Foreground="#CCCCCC" />
+                                <ComboBox x:Name="TabSizeCombo" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="2 spaces" />
+                                    <ComboBoxItem Content="4 spaces" />
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Spacing="4" Margin="0,2,0,0">
+                            <CheckBox x:Name="WordWrapCheck"
+                                      Content="Wrap long lines (Word Wrap)"
+                                      FontSize="12.5" />
+                            <CheckBox x:Name="ShowMinimapCheck"
+                                      Content="Show code minimap on right edge of editor"
+                                      FontSize="12.5" />
+                            <CheckBox x:Name="AutoCloseCheck"
+                                      Content="Auto-close HTML/XML tags, brackets, and quotes"
+                                      FontSize="12.5" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Preview & Workspace Section -->
+                <Border Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="5" Padding="14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="PREVIEW &amp; WORKSPACE"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#569CD6" />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Default Preview Mode on Startup" FontSize="12" Foreground="#CCCCCC" />
+                            <ComboBox x:Name="DefaultPreviewModeCombo" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Live Edits (real-time as you type)" />
+                                <ComboBoxItem Content="Last Saved State (on disk)" />
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4" Margin="0,2,0,0">
+                            <CheckBox x:Name="ShowPreviewStartupCheck"
+                                      Content="Open Chromium Preview pane on startup"
+                                      FontSize="12.5" />
+                            <CheckBox x:Name="ShowAgentStartupCheck"
+                                      Content="Open Agent sidebar on startup"
+                                      FontSize="12.5" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Confirmations Section -->
+                <Border Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="5" Padding="14">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="CONFIRMATIONS"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#569CD6" />
+
+                        <CheckBox x:Name="ConfirmClearChatCheck"
+                                  Content="Ask for confirmation before clearing Agent conversation history"
+                                  FontSize="12.5" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer Buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,16,0,0">
+            <Button Classes="toolbar-btn"
+                    Content="Cancel"
+                    IsCancel="True"
+                    Padding="14,6"
+                    Background="#2D2D30"
+                    Click="OnCancelClick" />
+            <Button Classes="accent-btn"
+                    Content="Save Preferences"
+                    IsDefault="True"
+                    Padding="16,6"
+                    Click="OnSaveClick" />
+        </StackPanel>
+    </Grid>
+</Window>

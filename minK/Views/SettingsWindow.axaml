@@ -1,0 +1,133 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="mink.Views.SettingsWindow"
+        Title="Ollama Connection — minK"
+        Icon="/Assets/mink.ico"
+        Width="540"
+        Height="435"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        Foreground="#CCCCCC">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
+            <Image Source="/Assets/mink-glyph.png"
+                   Height="28"
+                   Stretch="Uniform"
+                   RenderOptions.BitmapInterpolationMode="HighQuality"
+                   VerticalAlignment="Center" />
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="Ollama Connection"
+                           FontSize="17"
+                           FontWeight="Bold"
+                           Foreground="#F0F4F8" />
+                <TextBlock Text="100% air-gapped local or LAN connection. Zero cloud endpoints or telemetry."
+                           FontSize="12"
+                           Foreground="#8A8A8A" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Form Body -->
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="14">
+                <!-- Server URL -->
+                <Border Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="5" Padding="14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="OLLAMA SERVER ENDPOINT (LOCAL DEVICE OR LAN)"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#569CD6" />
+
+                        <Grid ColumnDefinitions="*,8,Auto">
+                            <TextBox x:Name="BaseUrlBox"
+                                     Grid.Column="0"
+                                     Watermark="http://localhost:11434 or http://192.168.1.50:11434"
+                                     Background="#1E1E1E"
+                                     BorderBrush="#3C3C3C"
+                                     FontSize="13" />
+                            <Button x:Name="TestConnectionBtn"
+                                    Grid.Column="2"
+                                    Classes="accent-btn"
+                                    Content="Test &amp; Fetch Models"
+                                    Click="OnTestConnectionClick" />
+                        </Grid>
+
+                        <TextBlock Text="Examples: http://localhost:11434 (this PC)  •  http://192.168.1.150:11434 (LAN GPU host)"
+                                   FontSize="11"
+                                   Foreground="#808080" />
+
+                        <TextBlock x:Name="ConnectionStatusText"
+                                   Text=""
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   IsVisible="False" />
+
+                        <!-- Model Selection -->
+                        <Grid ColumnDefinitions="*,8,190" Margin="0,4,0,0">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Model Tag" FontSize="12" Foreground="#CCCCCC" />
+                                <TextBox x:Name="ModelNameBox"
+                                         Watermark="qwen2.5-coder:7b"
+                                         Background="#1E1E1E"
+                                         BorderBrush="#3C3C3C"
+                                         FontSize="13" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="Discovered on Server" FontSize="12" Foreground="#CCCCCC" />
+                                <ComboBox x:Name="DiscoveredModelsCombo"
+                                          HorizontalAlignment="Stretch"
+                                          PlaceholderText="(Click Test first)"
+                                          SelectionChanged="OnDiscoveredModelSelected" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Temperature & Context Window -->
+                        <Grid ColumnDefinitions="*,12,*" Margin="0,4,0,0">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Temperature (0.0 - 1.0)" FontSize="12" Foreground="#CCCCCC" />
+                                <TextBox x:Name="TemperatureBox"
+                                         Background="#1E1E1E"
+                                         BorderBrush="#3C3C3C"
+                                         FontSize="13" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="Context Window (Tokens)" FontSize="12" Foreground="#CCCCCC" />
+                                <ComboBox x:Name="ContextWindowCombo" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="4096" />
+                                    <ComboBoxItem Content="8192" />
+                                    <ComboBoxItem Content="16384" />
+                                    <ComboBoxItem Content="32768" />
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer Buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,16,0,0">
+            <Button Classes="toolbar-btn"
+                    Content="Cancel"
+                    IsCancel="True"
+                    Padding="14,6"
+                    Background="#2D2D30"
+                    Click="OnCancelClick" />
+            <Button Classes="accent-btn"
+                    Content="Save &amp; Apply"
+                    IsDefault="True"
+                    Padding="16,6"
+                    Click="OnSaveClick" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,78 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:mink.Controls"
+        x:Class="mink.Views.PreviewWindow"
+        Title="minK — Chromium Preview"
+        Icon="/Assets/mink.ico"
+        Width="900"
+        Height="680"
+        Background="#1E1E1E"
+        Foreground="#CCCCCC">
+
+    <Grid RowDefinitions="36,*">
+        <!-- Preview Header Bar -->
+        <Border Grid.Row="0" Background="#252526" BorderBrush="#333337" BorderThickness="0,0,0,1" Padding="10,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Image Source="/Assets/mink-glyph.png"
+                           Height="18"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"
+                           VerticalAlignment="Center" />
+                    <TextBlock Text="minK Preview"
+                               FontSize="12.5"
+                               FontWeight="Bold"
+                               Foreground="#F0F4F8"
+                               VerticalAlignment="Center" />
+                    <Border Background="#1E1E1E" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="3" Padding="6,2">
+                        <TextBlock Text="{Binding PreviewTargetTitle}"
+                                   FontSize="11.5"
+                                   Foreground="#9CDCFE" />
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <!-- Live Edits vs Saved State Segmented Toggle -->
+                    <Border Background="#1E1E1E" BorderBrush="#3C3C3C" BorderThickness="1" CornerRadius="4" Padding="2">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <Button Content="⚡ Live Edits"
+                                    Command="{Binding SetLivePreviewModeCommand}"
+                                    Background="{Binding LiveModeButtonBg}"
+                                    Foreground="#FFFFFF"
+                                    BorderThickness="0"
+                                    Padding="8,3"
+                                    FontSize="11.5"
+                                    CornerRadius="3" />
+                            <Button Content="💾 Last Saved"
+                                    Command="{Binding SetSavedPreviewModeCommand}"
+                                    Background="{Binding SavedModeButtonBg}"
+                                    Foreground="#FFFFFF"
+                                    BorderThickness="0"
+                                    Padding="8,3"
+                                    FontSize="11.5"
+                                    CornerRadius="3" />
+                        </StackPanel>
+                    </Border>
+
+                    <Button Classes="toolbar-btn"
+                            Content="↻ Refresh"
+                            ToolTip.Tip="Reload Chromium Preview"
+                            Command="{Binding RefreshPreviewCommand}" />
+
+                    <Button Classes="accent-btn"
+                            Content="↙ Dock to Editor"
+                            Padding="10,4"
+                            FontSize="11.5"
+                            ToolTip.Tip="Re-dock preview pane inside main editor window"
+                            Click="OnDockBackClick" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Embedded Chromium Engine -->
+        <controls:PlatformWebView x:Name="DetachedPreviewSurface"
+                                  Grid.Row="1"
+                                  AllowDefaultContextMenu="True"
+                                  AllowBrowserZoom="True" />
+    </Grid>
+</Window>
