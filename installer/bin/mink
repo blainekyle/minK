@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+BIN="$SCRIPT_DIR/../minK.exe"
+for arg in "$@"; do
+  case "$arg" in
+    -v|--version|-h|--help|-w|--wait)
+      "$BIN" "$@"
+      exit $?
+      ;;
+  esac
+done
+"$BIN" "$@" >/dev/null 2>&1 &

@@ -11,6 +11,13 @@
 **SUPPORTED:**
 - *AI-assisted editing using your own Ollama agent responsibly running on local hardware for work, not slop*
 ---
+## Download & Install (Windows x64)
+
+Download the latest self-contained Windows installer from [**GitHub Releases**](https://github.com/blainekyle/minK/releases/latest):
+
+- **[`minK-Setup-1.0.0-win-x64.exe`](https://github.com/blainekyle/minK/releases/download/v1.0.0/minK-Setup-1.0.0-win-x64.exe)** — Self-contained `.NET 8` + `Avalonia` + offline `Monaco` package (no admin rights required for per-user install). Includes optional `"Open with minK"` Explorer context menus, Windows Default Apps registration, and the `mink` CLI shim on `PATH`.
+
+---
 ## Key Features
 
 - **Classic Layout**: Multi-tab file editing, colored line numbers, bracket-pair colorization, and dark styling built on **Avalonia UI (.NET 8)**.

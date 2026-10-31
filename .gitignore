@@ -1,5 +1,7 @@
 # .NET build outputs
 [Bb]in/
+!installer/bin/
+!installer/bin/*
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
